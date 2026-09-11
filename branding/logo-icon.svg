@@ -1,0 +1,50 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    NostalgieTV — icône : un vieux poste de télévision (CRT, oreilles de lapin,
+    boutons de réglage, pieds évasés). L'écran diffuse le même motif que la
+    précédente version de l'icône : un signal qui se précise (statique, en
+    pointillé terne, vers un signal net ambre) — ce que la télé "capte" une
+    fois qu'on a retrouvé la bonne chaîne. Fond transparent.
+  -->
+
+  <!-- pieds -->
+  <line x1="58" y1="150" x2="42" y2="178" stroke="#EEE6D3" stroke-width="9" stroke-linecap="round"/>
+  <line x1="142" y1="150" x2="158" y2="178" stroke="#EEE6D3" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- antenne (oreilles de lapin, asymétriques pour le charme vintage) -->
+  <line x1="100" y1="52" x2="58" y2="14" stroke="#EEE6D3" stroke-width="5" stroke-linecap="round"/>
+  <line x1="100" y1="52" x2="152" y2="8" stroke="#EEE6D3" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="100" cy="52" r="5" fill="#EEE6D3"/>
+
+  <!-- carcasse -->
+  <rect x="30" y="52" width="140" height="98" rx="18" fill="#EEE6D3"/>
+
+  <!-- écran -->
+  <rect x="48" y="68" width="88" height="64" rx="8" fill="#142420"/>
+
+  <!-- grille haut-parleur -->
+  <line x1="70" y1="138" x2="114" y2="138" stroke="#9BAE9F" stroke-width="3" stroke-linecap="round"/>
+  <line x1="70" y1="143" x2="114" y2="143" stroke="#9BAE9F" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- boutons de réglage -->
+  <circle cx="153" cy="88" r="7" fill="#E8A33D"/>
+  <circle cx="153" cy="114" r="7" fill="#E8A33D"/>
+
+  <!-- signal à l'écran : statique (terne, pointillé) qui se résout en signal (ambre plein) -->
+  <g stroke-linecap="round">
+    <line x1="54" y1="80" x2="69" y2="80" stroke="#9BAE9F" stroke-opacity="0.5" stroke-width="5" stroke-dasharray="2.5 2"/>
+    <line x1="69" y1="80" x2="88" y2="80" stroke="#E8A33D" stroke-width="5"/>
+
+    <line x1="54" y1="90" x2="77" y2="90" stroke="#9BAE9F" stroke-opacity="0.5" stroke-width="5" stroke-dasharray="2.5 2"/>
+    <line x1="77" y1="90" x2="112" y2="90" stroke="#E8A33D" stroke-width="5"/>
+
+    <line x1="54" y1="100" x2="81" y2="100" stroke="#9BAE9F" stroke-opacity="0.5" stroke-width="5" stroke-dasharray="2.5 2"/>
+    <line x1="81" y1="100" x2="126" y2="100" stroke="#E8A33D" stroke-width="5"/>
+
+    <line x1="54" y1="110" x2="77" y2="110" stroke="#9BAE9F" stroke-opacity="0.5" stroke-width="5" stroke-dasharray="2.5 2"/>
+    <line x1="77" y1="110" x2="112" y2="110" stroke="#E8A33D" stroke-width="5"/>
+
+    <line x1="54" y1="120" x2="69" y2="120" stroke="#9BAE9F" stroke-opacity="0.5" stroke-width="5" stroke-dasharray="2.5 2"/>
+    <line x1="69" y1="120" x2="88" y2="120" stroke="#E8A33D" stroke-width="5"/>
+  </g>
+</svg>
