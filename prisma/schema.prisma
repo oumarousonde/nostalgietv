@@ -1,0 +1,452 @@
+// Schéma NostalgieTV — système de crédits, parrainage et codes promo
+// Principe central : le solde de crédits n'est JAMAIS stocké directement.
+// Il se calcule toujours en sommant CreditTransaction. Voir src/services/creditLedger.ts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  member
+  admin
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String   // jamais le mot de passe en clair — voir src/services/auth.ts
+  emailVerifiedAt DateTime?
+  createdAt       DateTime @default(now())
+  role            UserRole @default(member)
+
+  // Utilisé pour le lien de confirmation envoyé par email. Régénéré à chaque demande,
+  // toujours à durée de vie limitée (voir emailVerificationExpiresAt).
+  emailVerificationToken     String?   @unique
+  emailVerificationExpiresAt DateTime?
+
+  // Code unique généré à l'inscription, que d'autres utilisateurs saisissent pour parrainer.
+  referralCode    String   @unique
+
+  // Le code de parrainage saisi PAR cet utilisateur à SON inscription (nullable si aucun).
+  // Ne peut être renseigné qu'une seule fois, à la création du compte — jamais après coup.
+  referredByCode  String?
+
+  referralsMade    Referral[]          @relation("ReferrerRelation")
+  referralReceived Referral?           @relation("RefereeRelation")
+  creditTransactions CreditTransaction[]
+  promoRedemptions   PromoRedemption[]
+  promoCodesSeen     PromoCodeSeen[]
+  chatConversations  ChatConversation[]
+  supportMessages    SupportMessage[]
+  searchHistory      SearchHistoryEntry[]
+  favorites          Favorite[]
+  reviews            Review[]
+
+  // Signaux de suspicion anti-fraude (voir src/services/referral.ts)
+  signupIp        String?
+  deviceFingerprint String?
+}
+
+enum ReferralStatus {
+  pending    // filleul inscrit, condition de validation pas encore remplie
+  validated  // crédits distribués aux deux parties
+  rejected   // filleul jamais activé (compte inactif après le délai de carence)
+}
+
+model Referral {
+  id           String         @id @default(uuid())
+  referrerId   String
+  referrer     User           @relation("ReferrerRelation", fields: [referrerId], references: [id])
+
+  // UNIQUE : un utilisateur ne peut être filleul qu'une seule fois, jamais deux parrains.
+  refereeId    String         @unique
+  referee      User           @relation("RefereeRelation", fields: [refereeId], references: [id])
+
+  status       ReferralStatus @default(pending)
+  createdAt    DateTime       @default(now())
+  validatedAt  DateTime?
+
+  // Signal de suspicion, pas un blocage dur — voir doc anti-fraude section 4.
+  sameIpAsReferrer     Boolean @default(false)
+  sameDeviceAsReferrer Boolean @default(false)
+
+  @@index([status])
+}
+
+enum CreditReason {
+  referral_bonus   // le parrain touche +10
+  referral_reward  // le filleul touche +5
+  promo_code       // crédits via code promo
+  admin_grant      // l'admin distribue des crédits de recherche IA manuellement
+  ia_search_spend  // dépense lors d'une recherche image/vidéo/description/lien
+}
+
+model CreditTransaction {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  amount         Int          // positif = crédit, négatif = dépense
+  reason         CreditReason
+  referenceId    String?      // id du Referral, du PromoCode, ou de la recherche concernée
+
+  // Empêche tout double-crédit : deux transactions ne peuvent jamais partager la même clé,
+  // même en cas de double-clic, de retry réseau, ou de requêtes concurrentes.
+  idempotencyKey String       @unique
+
+  createdAt      DateTime     @default(now())
+
+  @@index([userId])
+}
+
+model PromoCode {
+  code          String   @id
+  creditAmount  Int
+  maxUses       Int
+  usesCount     Int      @default(0)
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  // true = à annoncer largement (bandeau vu par tous les utilisateurs à leur prochaine
+  // connexion). false = code privé, communiqué à la main à une personne précise —
+  // ne pas le diffuser publiquement le rendrait inutile comme geste ciblé.
+  announce      Boolean  @default(true)
+
+  redemptions   PromoRedemption[]
+  seenBy        PromoCodeSeen[]
+}
+
+// Empêche qu'un utilisateur revoie indéfiniment le même bandeau une fois qu'il l'a
+// fermé — sans ça, l'annonce reviendrait à chaque connexion tant que le code est actif.
+model PromoCodeSeen {
+  code      String
+  userId    String
+  promoCode PromoCode @relation(fields: [code], references: [code])
+  user      User      @relation(fields: [userId], references: [id])
+  seenAt    DateTime  @default(now())
+
+  @@id([code, userId])
+}
+
+model PromoRedemption {
+  code        String
+  userId      String
+  promoCode   PromoCode @relation(fields: [code], references: [code])
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  // Jour calendaire (UTC) de l'utilisation, ex. "2026-09-05" — calculé à l'écriture,
+  // pas dérivé de createdAt à la lecture. Sert à la contrainte ci-dessous : un
+  // utilisateur ne peut avoir plus d'UNE ligne par jour, tous codes confondus.
+  // C'est ça qui empêche vraiment la règle "1 jour = 1 code" d'être contournée par
+  // deux requêtes simultanées (deux onglets, double-tap) — la vérification côté
+  // code seule ne suffit pas, voir services/promoCode.ts.
+  redeemedDay String
+
+  // Un même utilisateur ne peut utiliser un même code promo qu'une seule fois.
+  @@id([code, userId])
+  // Un même utilisateur ne peut faire plus d'une utilisation par jour, code différent ou pas.
+  @@unique([userId, redeemedDay])
+}
+
+// ============================================================
+// CATALOGUE — séries, épisodes, sources, moteur de recherche
+// ============================================================
+
+model Show {
+  id            String   @id @default(uuid())
+  tmdbId        Int?     @unique // rempli si trouvé via TMDB, null si fiche 100% communautaire
+  mediaType     String?  // "tv" | "movie" — nécessaire pour interroger le bon endpoint TMDB
+  title         String
+  originalLocale String  @default("fr") // langue de Show.title/synopsis tels que stockés — nécessaire pour savoir s'il faut traduire ou non
+  originalYear  Int?
+  synopsis      String?
+  posterUrl     String?
+  createdAt     DateTime @default(now())
+
+  episodes      Episode[]
+  affiliateLinks AffiliateLink[]
+  reviews       Review[]
+  images        ShowImage[]
+  alertSubscriptions AlertSubscription[]
+  favorites     Favorite[]
+  translations  ShowTranslation[]
+  supportMessages SupportMessage[]
+
+  // true si la fiche a été créée par la communauté suite à une recherche infructueuse,
+  // false si elle vient d'un match TMDB automatique.
+  communityCreated Boolean @default(false)
+
+  @@index([title])
+}
+
+// Galerie de confirmation visuelle : un utilisateur qui a tapé une description vague
+// a besoin de VOIR plusieurs images pour être sûr que c'est la bonne œuvre — un seul
+// poster ne suffit pas toujours (ça peut être un remake, une suite, un titre proche).
+model ShowImage {
+  id      String @id @default(uuid())
+  showId  String
+  show    Show   @relation(fields: [showId], references: [id])
+  url     String
+  type    String // "poster" | "backdrop" | "still"
+
+  @@index([showId])
+}
+
+model Episode {
+  id        String   @id @default(uuid())
+  showId    String
+  show      Show     @relation(fields: [showId], references: [id])
+  season    Int
+  episode   Int
+  title     String?  // nullable : "Titre inconnu" tant que personne ne l'a identifié
+
+  status    EpisodeStatus @default(missing)
+  sources   Source[]
+  affiliateLinks AffiliateLink[]
+  reviews   Review[]
+  supportMessages SupportMessage[]
+
+  @@unique([showId, season, episode])
+}
+
+enum EpisodeStatus {
+  found     // au moins une source gratuite disponible
+  missing   // aucune source, gratuite ou payante, identifiée
+  paidOnly  // trouvé uniquement via un fournisseur payant (Amazon/Netflix/etc.)
+}
+
+// Une source = un fichier/lien concret pointant vers un épisode retrouvé gratuitement
+// (upload communautaire, lien archive.org, etc.) — PAS un lien affilié.
+model Source {
+  id          String   @id @default(uuid())
+  episodeId   String
+  episode     Episode  @relation(fields: [episodeId], references: [id])
+  url         String
+  quality     VideoQuality @default(unknown) // permet de choisir, si plusieurs sources existent
+  submittedBy String   // userId du contributeur
+  verified    Boolean  @default(false) // passé par la file de modération avant d'être public
+  createdAt   DateTime @default(now())
+}
+
+enum VideoQuality {
+  unknown
+  sd
+  hd
+  uhd_4k
+}
+
+// ============================================================
+// FOURNISSEURS DE RECHERCHE ET D'AFFILIATION
+// ============================================================
+
+// Registre des fournisseurs utilisés dans la cascade de recherche.
+// Le code applicatif lit cette table plutôt que d'avoir les noms en dur,
+// pour pouvoir activer/désactiver ou réordonner sans déploiement.
+model SearchProvider {
+  key            String  @id // "tmdb" | "gemini" | "community" | ...
+  label          String
+  order          Int     // ordre d'exécution dans la cascade, croissant
+  costInCredits  Int     @default(0) // 0 = gratuit (TMDB, sources communautaires)
+  active         Boolean @default(true)
+}
+
+// Un lien affilié/partenaire pour un Show donné, distinct des Source gratuites.
+// episodeId est optionnel : un lien peut couvrir toute la série (ex. abonnement Netflix)
+// ou un épisode précis (ex. un épisode acheté à l'unité sur Amazon) — les deux cas
+// existent en pratique et ne doivent pas être confondus dans l'affichage.
+model AffiliateLink {
+  id           String   @id @default(uuid())
+  showId       String
+  show         Show     @relation(fields: [showId], references: [id])
+  episodeId    String?
+  episode      Episode? @relation(fields: [episodeId], references: [id])
+  platform     String   // "amazon" | "netflix" | "disney_plus" | ...
+  url          String
+  quality      VideoQuality @default(unknown) // Amazon propose souvent plusieurs qualités à des prix différents
+  hasCommission Boolean @default(false) // false pour Netflix : lien informatif, pas de programme d'affiliation actif
+  priceLabel   String?  // "8,99 €", "Abonnement", etc. — texte libre affiché à l'utilisateur
+  createdAt    DateTime @default(now())
+
+  @@index([episodeId])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  showId    String
+  show      Show     @relation(fields: [showId], references: [id])
+  // Optionnel : absent = avis sur la série/le film entier, présent = avis sur
+  // CET épisode précis (utile pour un film, ou pour dire "cet épisode précis
+  // vaut le détour" au sein d'une série de plusieurs saisons).
+  episodeId String?
+  episode   Episode? @relation(fields: [episodeId], references: [id])
+  // Jamais null, contrairement à episodeId : soit l'id de l'épisode (dupliqué ici),
+  // soit le mot-clé "show" pour un avis sur l'ensemble de la série. Nécessaire car
+  // PostgreSQL ne considère jamais deux NULL comme égaux dans une contrainte unique —
+  // un episodeId nullable seul dans @@unique laisserait un utilisateur poster
+  // plusieurs avis "série entière" sans qu'aucun blocage ne s'applique.
+  reviewScope String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  rating    Int      // 1 à 5
+  comment   String
+  createdAt DateTime @default(now())
+
+  // Un seul avis par utilisateur, par fiche, ET par portée (série entière ou
+  // épisode précis) — évite qu'un même compte spamme la note.
+  @@unique([showId, userId, reviewScope])
+}
+
+// ============================================================
+// HISTORIQUE & FAVORIS
+// ============================================================
+
+// Une ligne par recherche effectuée, connectée ou non à un résultat trouvé —
+// permet à l'utilisateur de retrouver "qu'est-ce que j'ai cherché la semaine
+// dernière", même si la recherche n'avait alors rien donné.
+model SearchHistoryEntry {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  mode           String   // "title" | "description" | "images" | "video" | "link"
+  queryText      String?  // la valeur textuelle saisie, null pour images/vidéo (pas de texte à stocker)
+  matchedShowId  String?  // rempli si la recherche a abouti à une fiche
+  providerUsed   String   // "tmdb" | "community" | "gemini" | "none"
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  showId    String
+  show      Show     @relation(fields: [showId], references: [id])
+  createdAt DateTime @default(now())
+
+  // Un utilisateur ne peut mettre la même fiche en favori qu'une seule fois.
+  @@unique([userId, showId])
+}
+
+// ============================================================
+// TRADUCTIONS — titre/résumé par langue
+// ============================================================
+
+// La donnée "brute" en base (Show.title, Show.synopsis) est dans SA langue d'origine :
+// celle de TMDB pour les fiches automatiques (fr-FR, vu le code existant), le français
+// par défaut pour les fiches ouvertes par la communauté. Ce modèle cache la traduction
+// dès qu'elle est demandée une première fois, pour ne pas re-traduire à chaque requête
+// (re-fetch TMDB ou appel Gemini, tous les deux ont un coût).
+model ShowTranslation {
+  id       String @id @default(uuid())
+  showId   String
+  show     Show   @relation(fields: [showId], references: [id])
+  locale   String // "fr" | "en"
+  title    String
+  synopsis String?
+
+  @@unique([showId, locale])
+}
+
+// ============================================================
+// SOUTIEN / DONS (mobile money — indépendant du système de crédits)
+// ============================================================
+
+model DonationChannel {
+  id        String   @id @default(uuid())
+  provider  String   // "orange_money" | "wave" | "moov_money"
+  countryCode String // "+226"
+  phoneNumber String
+  active    Boolean  @default(true)
+}
+
+// ============================================================
+// ALERTES — "préviens-moi quand quelqu'un la retrouve"
+// ============================================================
+
+// Volontairement PAS de compte obligatoire : quelqu'un qui cherche une série qu'on
+// n'a pas trouvée doit pouvoir juste laisser son numéro, sans créer de compte.
+// userId est donc nullable — rempli seulement si la personne était déjà connectée.
+model AlertSubscription {
+  id          String    @id @default(uuid())
+  showId      String
+  show        Show      @relation(fields: [showId], references: [id])
+  userId      String?
+  phoneNumber String?
+  // Langue de la personne AU MOMENT où elle s'est abonnée (?lang= ou Accept-Language) —
+  // pas de compte requis pour s'abonner, donc pas de préférence de langue sur un profil
+  // à consulter ; c'est la seule info de langue disponible pour rédiger le SMS plus tard.
+  locale      String    @default("fr")
+  notifiedAt  DateTime? // null tant que personne n'a encore retrouvé quoi que ce soit
+  createdAt   DateTime  @default(now())
+
+  @@index([showId, notifiedAt])
+}
+
+// ============================================================
+// CHATBOT — payant en crédits, comme la recherche multimodale
+// ============================================================
+
+model ChatConversation {
+  id        String        @id @default(uuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  title     String? // dérivé du premier message, pour l'affichage dans une liste de conversations
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+
+  @@index([userId, createdAt])
+}
+
+enum ChatRole {
+  user
+  assistant
+}
+
+model ChatMessage {
+  id             String           @id @default(uuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id])
+  role           ChatRole
+  content        String
+  createdAt      DateTime         @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// ============================================================
+// CONTACT ADMIN — pour ceux qui n'ont plus de crédits (ou toute autre demande)
+// ============================================================
+
+enum SupportMessageStatus {
+  open
+  answered
+}
+
+model SupportMessage {
+  id             String               @id @default(uuid())
+  userId         String
+  user           User                 @relation(fields: [userId], references: [id])
+  subject        String
+  message        String
+  status         SupportMessageStatus @default(open)
+  adminReply     String?
+  repliedAt      DateTime?
+  createdAt      DateTime             @default(now())
+
+  // Optionnels : permettent de rattacher le message à une fiche précise plutôt
+  // que de compter sur l'utilisateur pour tout décrire en texte libre — utile
+  // pour "cet épisode précis manque, peux-tu le chercher ?" avec un vrai lien
+  // cliquable côté admin plutôt qu'une simple phrase à interpréter.
+  showId         String?
+  show           Show?                @relation(fields: [showId], references: [id])
+  episodeId      String?
+  episode        Episode?             @relation(fields: [episodeId], references: [id])
+
+  @@index([status, createdAt])
+}
