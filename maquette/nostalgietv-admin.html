@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NostalgieTV — Administration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#142420;
+    --surface:#1E3129;
+    --surface-2:#24211B;
+    --line:#3A4B41;
+    --amber:#E8A33D;
+    --rust:#C1503A;
+    --cream:#EEE6D3;
+    --muted:#9BAE9F;
+    --muted-2:#6E8177;
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg-deep);
+    color:var(--cream);
+    font-family:var(--font-body);
+    line-height:1.5;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:0 28px;}
+
+  header{padding:20px 0;border-bottom:1px solid rgba(58,75,65,0.6);}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:var(--font-display);font-weight:700;font-size:20px;}
+  .logo .dot{color:var(--amber);}
+  .role-badge{
+    font-family:var(--font-mono);font-size:11.5px;
+    color:var(--bg-deep);background:var(--amber);
+    padding:4px 10px;border-radius:3px;font-weight:600;
+  }
+
+  .shell{display:grid;grid-template-columns:200px 1fr;gap:0;min-height:calc(100vh - 65px);}
+  .side{border-right:1px solid rgba(58,75,65,0.6);padding:28px 20px;}
+  .side a{
+    display:block;padding:9px 10px;margin-bottom:2px;border-radius:4px;
+    color:var(--muted);text-decoration:none;font-size:14px;
+  }
+  .side a.active{background:var(--surface);color:var(--cream);}
+  .main{padding:32px 32px 60px;}
+
+  h1{font-family:var(--font-display);font-weight:600;font-size:26px;margin:0 0 6px;}
+  .subtitle{color:var(--muted);font-size:14px;margin:0 0 32px;}
+
+  .stat-row{display:flex;gap:14px;margin-bottom:36px;flex-wrap:wrap;}
+  .stat{
+    background:var(--surface);border:1px solid var(--line);border-radius:6px;
+    padding:16px 20px;min-width:140px;
+  }
+  .stat .num{font-family:var(--font-mono);font-size:24px;color:var(--amber);display:block;}
+  .stat .label{font-size:12.5px;color:var(--muted);}
+
+  .panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:24px;margin-bottom:28px;
+  }
+  .panel h2{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0 0 18px;}
+
+  /* Grant credits form */
+  .grant-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:11.5px;color:var(--muted-2);font-family:var(--font-mono);}
+  .field input, .field select{
+    background:var(--bg-deep);border:1px solid var(--line);border-radius:4px;
+    padding:10px 12px;color:var(--cream);font-size:14px;font-family:var(--font-body);
+  }
+  .field.grow{flex:1;min-width:180px;}
+  .btn-amber{
+    background:var(--amber);color:var(--bg-deep);border:none;border-radius:4px;
+    padding:11px 20px;font-weight:600;font-size:14px;cursor:pointer;
+  }
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{
+    text-align:left;font-family:var(--font-mono);font-size:11px;color:var(--muted-2);
+    padding:8px 10px;border-bottom:1px solid var(--line);font-weight:500;
+  }
+  td{padding:12px 10px;border-bottom:1px solid rgba(58,75,65,0.4);vertical-align:middle;}
+  .user-cell{display:flex;align-items:center;gap:10px;}
+  .avatar-sm{
+    width:28px;height:28px;border-radius:50%;
+    background:linear-gradient(150deg, var(--amber), var(--rust));
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:600;font-size:12px;color:var(--bg-deep);
+  }
+  .badge{
+    font-family:var(--font-mono);font-size:10.5px;padding:3px 8px;border-radius:3px;
+    border:1px solid var(--line);color:var(--muted);
+  }
+  .btn-mini{
+    border:1px solid var(--line);background:transparent;color:var(--cream);
+    padding:6px 12px;border-radius:4px;font-size:12.5px;cursor:pointer;
+  }
+  .btn-mini.approve{border-color:var(--amber);color:var(--amber);}
+  .btn-mini.reject{border-color:var(--rust);color:var(--rust);}
+
+  .ep-preview{font-family:var(--font-mono);font-size:12px;color:var(--muted-2);}
+
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  @media (max-width:800px){
+    .shell{grid-template-columns:1fr;}
+    .side{
+      border-right:none;border-bottom:1px solid rgba(58,75,65,0.6);
+      display:flex;gap:4px;overflow-x:auto;padding:14px 20px;
+      -webkit-overflow-scrolling:touch;
+    }
+    .side a{white-space:nowrap;margin-bottom:0;}
+    .main{padding:20px 18px 48px;}
+    .stat-row{gap:10px;}
+    .stat{min-width:calc(50% - 6px);}
+    .grant-form{flex-direction:column;align-items:stretch;}
+    .field.grow{min-width:0;}
+    table{min-width:560px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">Nostalgie<span class="dot">·</span>TV <span style="font-size:14px;color:var(--muted);">/ admin</span></div>
+    <span class="role-badge">ADMINISTRATEUR</span>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="side">
+    <a href="#" class="active">Vue d'ensemble</a>
+    <a href="#">Crédits IA</a>
+    <a href="#">Modération</a>
+    <a href="#">Utilisateurs</a>
+    <a href="#">Fournisseurs</a>
+  </nav>
+
+  <div class="main">
+    <h1>Vue d'ensemble</h1>
+    <p class="subtitle">Distribution des crédits IA et modération des sources communautaires.</p>
+
+    <div class="stat-row">
+      <div class="stat"><span class="num">1 284</span><span class="label">recherches ce mois-ci</span></div>
+      <div class="stat"><span class="num">312</span><span class="label">crédits IA distribués (admin)</span></div>
+      <div class="stat"><span class="num">17</span><span class="label">sources en attente de modération</span></div>
+      <div class="stat"><span class="num">89</span><span class="label">parrainages validés</span></div>
+    </div>
+
+    <div class="panel">
+      <h2>Attribuer des crédits IA</h2>
+      <div class="grant-form">
+        <div class="field grow">
+          <label>UTILISATEUR</label>
+          <input type="text" placeholder="Email ou identifiant" />
+        </div>
+        <div class="field">
+          <label>MONTANT</label>
+          <input type="number" placeholder="10" style="width:90px;" />
+        </div>
+        <div class="field grow">
+          <label>MOTIF (visible en audit)</label>
+          <input type="text" placeholder="Contributeur actif — 40 sources vérifiées" />
+        </div>
+        <button class="btn-amber">Attribuer</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>File de modération — sources en attente</h2>
+      <div class="table-scroll"><table>
+        <thead>
+          <tr><th>Épisode</th><th>Source proposée</th><th>Soumis par</th><th>Date</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Les Mystères de Vertigo — <span class="ep-preview">S02E02</span></td>
+            <td class="ep-preview">drive.google.com/file/d/1a2b…</td>
+            <td class="user-cell"><span class="avatar-sm">T</span> Thomas R.</td>
+            <td class="ep-preview">il y a 2h</td>
+            <td style="display:flex;gap:6px;">
+              <button class="btn-mini approve">Approuver</button>
+              <button class="btn-mini reject">Rejeter</button>
+            </td>
+          </tr>
+          <tr>
+            <td>Les Mystères de Vertigo — <span class="ep-preview">S01E05</span></td>
+            <td class="ep-preview">archive.org/details/vertigo-…</td>
+            <td class="user-cell"><span class="avatar-sm">M</span> Marion D.</td>
+            <td class="ep-preview">il y a 6h</td>
+            <td style="display:flex;gap:6px;">
+              <button class="btn-mini approve">Approuver</button>
+              <button class="btn-mini reject">Rejeter</button>
+            </td>
+          </tr>
+          <tr>
+            <td>Le Clown Bleu (piste ouverte) — <span class="ep-preview">S01E01</span></td>
+            <td class="ep-preview">lien vidéo YouTube non listé</td>
+            <td class="user-cell"><span class="avatar-sm">L</span> Léa K.</td>
+            <td class="ep-preview">il y a 1j</td>
+            <td style="display:flex;gap:6px;">
+              <button class="btn-mini approve">Approuver</button>
+              <button class="btn-mini reject">Rejeter</button>
+            </td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="panel">
+      <h2>Contributeurs les plus actifs — candidats à un boost de crédits</h2>
+      <div class="table-scroll"><table>
+        <thead>
+          <tr><th>Utilisateur</th><th>Sources validées</th><th>Solde actuel</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="user-cell"><span class="avatar-sm">M</span> Marion D.</td>
+            <td class="ep-preview">41</td>
+            <td class="ep-preview">6 crédits</td>
+            <td><button class="btn-mini approve">+ Attribuer 10</button></td>
+          </tr>
+          <tr>
+            <td class="user-cell"><span class="avatar-sm">T</span> Thomas R.</td>
+            <td class="ep-preview">27</td>
+            <td class="ep-preview">2 crédits</td>
+            <td><button class="btn-mini approve">+ Attribuer 10</button></td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
