@@ -1,0 +1,4 @@
+[build]
+  # Les maquettes sont des fichiers HTML statiques, aucune étape de build nécessaire.
+  publish = "maquette"
+  command = ""

@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NostalgieTV — Retrouve ce que tu croyais avoir perdu</title>
+<link rel="icon" href="/icons/favicon-64.png" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#142420">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#142420;
+    --bg-vignette:#0e1c18;
+    --surface:#1E3129;
+    --surface-2:#24211B;
+    --line:#3A4B41;
+    --amber:#E8A33D;
+    --amber-dim:#B87F2C;
+    --rust:#C1503A;
+    --cream:#EEE6D3;
+    --muted:#9BAE9F;
+    --muted-2:#6E8177;
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 120% 60% at 50% -10%, #1c3229 0%, transparent 60%),
+      var(--bg-deep);
+    color:var(--cream);
+    font-family:var(--font-body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 28px;}
+
+  /* subtle scanline texture on hero only */
+  .scanlines{
+    position:relative;
+  }
+  .scanlines::before{
+    content:"";
+    position:absolute;inset:0;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(238,230,211,0.025) 0px,
+      rgba(238,230,211,0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events:none;
+    mix-blend-mode:overlay;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    padding:22px 0;
+    border-bottom:1px solid rgba(58,75,65,0.6);
+  }
+  header .wrap{display:flex;align-items:center;justify-content:space-between;}
+  .logo{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.2px;
+    display:flex;
+    align-items:baseline;
+    gap:2px;
+  }
+  .logo .dot{color:var(--amber);font-size:26px;line-height:0;}
+  nav{display:flex;gap:28px;font-size:14.5px;color:var(--muted);}
+  nav a{text-decoration:none;transition:color .15s;}
+  nav a:hover{color:var(--cream);}
+  .btn-ghost{
+    border:1px solid var(--line);
+    padding:9px 18px;
+    border-radius:3px;
+    font-size:14px;
+    color:var(--cream);
+    background:transparent;
+    cursor:pointer;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{padding:76px 0 64px;}
+  .hero .kicker{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--muted-2);
+    margin-bottom:18px;
+  }
+  .hero h1{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(34px, 5vw, 58px);
+    line-height:1.06;
+    max-width:12ch;
+    margin:0 0 22px;
+    color:var(--cream);
+  }
+  .hero h1 em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--amber);
+  }
+  .hero p.lede{
+    max-width:46ch;
+    color:var(--muted);
+    font-size:17px;
+    margin:0 0 40px;
+  }
+
+  /* Search console styled like a tuner panel */
+  .console{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:6px;
+    max-width:640px;
+  }
+  .tabs{display:flex;gap:2px;padding:6px 6px 0;}
+  .tab{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--muted);
+    background:transparent;
+    border:none;
+    padding:9px 14px 11px;
+    cursor:pointer;
+    border-radius:4px 4px 0 0;
+    letter-spacing:0.3px;
+  }
+  .tab.active{
+    color:var(--bg-deep);
+    background:var(--amber);
+    font-weight:500;
+  }
+  .search-row{
+    display:flex;
+    gap:8px;
+    padding:10px;
+  }
+  .search-row input{
+    flex:1;
+    background:var(--bg-deep);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:14px 16px;
+    color:var(--cream);
+    font-family:var(--font-body);
+    font-size:15px;
+  }
+  .search-row input::placeholder{color:var(--muted-2);}
+  .search-row input:focus{outline:2px solid var(--amber);outline-offset:1px;}
+  .btn-amber{
+    background:var(--amber);
+    color:var(--bg-deep);
+    border:none;
+    border-radius:4px;
+    padding:0 22px;
+    font-weight:600;
+    font-size:14.5px;
+    cursor:pointer;
+    transition:background .15s;
+  }
+  .btn-amber:hover{background:#f0b25c;}
+  .hint-row{
+    display:flex;gap:16px;padding:2px 14px 12px;
+    font-size:12.5px;color:var(--muted-2);
+    font-family:var(--font-mono);
+  }
+
+  /* ---------- Section shells ---------- */
+  section{padding:64px 0;}
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:32px;
+    border-bottom:1px solid rgba(58,75,65,0.6);
+    padding-bottom:18px;
+  }
+  .section-head h2{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:26px;
+    margin:0;
+  }
+  .section-head .count{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--muted-2);
+  }
+
+  /* ---------- Result card (fiche série) ---------- */
+  .fiche{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:32px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:28px;
+  }
+  .poster{
+    aspect-ratio:2/3;
+    border-radius:4px;
+    background:
+      linear-gradient(160deg, #2c463b, #16261f 70%);
+    border:1px solid var(--line);
+    display:flex;
+    align-items:flex-end;
+    padding:14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .poster::after{
+    content:"VHS";
+    position:absolute;
+    top:12px;right:12px;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--muted-2);
+    border:1px solid var(--line);
+    padding:2px 6px;
+    border-radius:2px;
+  }
+  .poster .p-title{
+    font-family:var(--font-display);
+    font-size:15px;
+    line-height:1.15;
+    color:var(--muted);
+  }
+  .fiche-body h3{
+    font-family:var(--font-display);
+    font-size:24px;
+    font-weight:600;
+    margin:0 0 6px;
+  }
+
+  /* Galerie de confirmation : "c'est bien ça ?" avant d'aller plus loin */
+  .confirm-gallery{
+    margin:4px 0 20px;
+  }
+  .confirm-gallery .confirm-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--muted-2);
+    letter-spacing:0.4px;
+    margin-bottom:8px;
+  }
+  .confirm-gallery .thumbs{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:4px;
+  }
+  .confirm-gallery .thumbs img{
+    height:92px;
+    width:auto;
+    border-radius:4px;
+    border:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .meta-line{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--muted-2);
+    margin-bottom:16px;
+  }
+  .fiche-body p.desc{
+    color:var(--muted);
+    font-size:14.5px;
+    max-width:58ch;
+    margin:0 0 20px;
+  }
+  .status-summary{
+    display:flex;
+    gap:22px;
+    margin-bottom:22px;
+  }
+  .status-summary .item{font-size:13.5px;color:var(--muted);}
+  .status-summary .num{
+    font-family:var(--font-mono);
+    font-size:20px;
+    color:var(--cream);
+    display:block;
+  }
+  .status-summary .item.found .num{color:var(--amber);}
+  .status-summary .item.missing .num{color:var(--rust);}
+
+  .ep-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(150px,1fr));
+    gap:8px;
+  }
+  .ep{
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:10px 12px;
+    background:var(--bg-deep);
+  }
+  .ep .ep-code{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--muted-2);
+    display:block;
+    margin-bottom:4px;
+  }
+  .ep .ep-title{font-size:13px;color:var(--cream);}
+  .ep.found{border-left:3px solid var(--amber);}
+  .ep.missing{border-left:3px solid var(--rust);opacity:0.72;}
+  .ep.missing .ep-title{color:var(--muted);font-style:italic;}
+  .ep-know-link{
+    display:block;margin-top:6px;font-size:11px;font-family:var(--font-mono);
+    color:var(--amber);text-decoration:none;
+  }
+
+  /* Bandeau de code promo actif — visible par tout le monde, connecté ou non */
+  #promo-banner{
+    display:none; /* affiché en JS uniquement si un code actif existe */
+    background:var(--amber);
+    color:var(--bg-deep);
+    font-family:var(--font-mono);
+    font-size:13px;
+    padding:10px 0;
+  }
+  #promo-banner .wrap{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  }
+  #promo-banner strong{font-family:var(--font-body);font-weight:600;}
+  #promo-banner button{
+    background:transparent;border:1px solid var(--bg-deep);color:var(--bg-deep);
+    border-radius:3px;padding:4px 10px;font-size:12px;cursor:pointer;
+  }
+  /* Bandeau(x) d'annonce écrits par un admin — même style que le bandeau promo,
+     couleur différente pour bien distinguer "offre" de "information". */
+  .site-announcement{
+    display:block;
+    background:var(--surface-2);
+    color:var(--cream);
+    font-family:var(--font-mono);
+    font-size:13px;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .site-announcement .wrap{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  }
+  .site-announcement button{
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    border-radius:3px;padding:4px 10px;font-size:12px;cursor:pointer;
+  }
+  .ep-flag{
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:0.4px;
+    float:right;
+  }
+  .ep.found .ep-flag{color:var(--amber);}
+  .ep.missing .ep-flag{color:var(--rust);}
+
+  /* ---------- Affiliation strip ---------- */
+  .watch-strip{
+    margin-top:26px;
+    padding-top:22px;
+    border-top:1px dashed var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .watch-strip .label{
+    font-size:13px;
+    color:var(--muted-2);
+  }
+  .watch-strip .platforms{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .platform-btn{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:9px 14px;
+    font-size:13.5px;
+    background:var(--surface-2);
+    text-decoration:none;
+    color:var(--cream);
+  }
+  .platform-btn .price{
+    font-family:var(--font-mono);
+    color:var(--amber);
+    font-size:12.5px;
+  }
+  .platform-btn.primary{
+    background:var(--amber);
+    color:var(--bg-deep);
+    font-weight:600;
+    border-color:var(--amber);
+  }
+  .platform-btn.primary .price{color:var(--bg-deep);}
+  .disclosure{
+    font-size:11.5px;
+    color:var(--muted-2);
+    margin-top:10px;
+  }
+
+  /* ---------- Avis ---------- */
+  .review{
+    display:grid;
+    grid-template-columns:44px 1fr;
+    gap:14px;
+    padding:20px 0;
+    border-bottom:1px solid rgba(58,75,65,0.5);
+  }
+  .review:last-child{border-bottom:none;}
+  .avatar{
+    width:44px;height:44px;
+    border-radius:50%;
+    background:linear-gradient(150deg, var(--amber-dim), var(--rust));
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:16px;
+    color:var(--bg-deep);
+  }
+  .review-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .review-head .name{font-weight:600;font-size:14.5px;}
+  .stars{font-family:var(--font-mono);font-size:13px;color:var(--amber);letter-spacing:1px;}
+  .review-head .date{font-size:12px;color:var(--muted-2);font-family:var(--font-mono);}
+  .review p{margin:0;font-size:14px;color:var(--muted);max-width:62ch;}
+  .review-form{
+    margin-top:24px;
+    display:flex;
+    gap:10px;
+  }
+  .review-form input{
+    flex:1;
+    background:var(--bg-deep);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:12px 14px;
+    color:var(--cream);
+    font-size:14px;
+  }
+
+  footer{
+    border-top:1px solid rgba(58,75,65,0.6);
+    padding:36px 0 48px;
+    color:var(--muted-2);
+    font-size:13px;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+
+  @media (max-width:680px){
+    .fiche{grid-template-columns:1fr;}
+    .poster{aspect-ratio:16/8;}
+    nav{display:none;}
+    .status-summary{gap:16px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="site-announcements"></div>
+
+<div id="promo-banner">
+  <div class="wrap">
+    <span>🎟️ <strong id="promo-code-label"></strong> — <span id="promo-amount-label"></span> crédits offerts<span id="promo-expiry-label"></span></span>
+    <button onclick="document.getElementById('promo-banner').style.display='none'">Fermer</button>
+  </div>
+</div>
+
+<header>
+  <div class="wrap">
+    <div class="logo">Nostalgie<span class="dot">·</span>TV</div>
+    <nav>
+      <a href="#recherche">Recherche</a>
+      <a href="#fiche">Fiches</a>
+      <a href="#avis">Avis</a>
+      <a href="#contribuer" id="donate-link">Contribuer</a>
+    </nav>
+    <button class="btn-ghost" id="change-password-btn" style="display:none;">Mot de passe</button>
+    <button class="btn-ghost" id="auth-btn">Se connecter</button>
+  </div>
+</header>
+
+<section class="hero scanlines" id="recherche">
+  <div class="wrap">
+    <div class="kicker">MOTEUR DE RECHERCHE — TITRE · DESCRIPTION · IMAGE · VIDÉO · LIEN</div>
+    <h1>Tu te souviens d'une série <em>que personne ne retrouve</em>.</h1>
+    <p class="lede">Décris-la, colle un lien, dépose une capture ou un extrait vidéo. NostalgieTV recoupe les bases d'archives et la communauté pour te dire ce qui existe encore — et ce qu'il manque.</p>
+
+    <div class="console">
+      <div class="tabs" id="search-tabs">
+        <button class="tab active" data-mode="title">Titre</button>
+        <button class="tab" data-mode="description">Description</button>
+        <button class="tab" data-mode="images" disabled title="Bientôt disponible depuis le site — utilisable dès maintenant via l'API">Image</button>
+        <button class="tab" data-mode="video" disabled title="Bientôt disponible depuis le site — utilisable dès maintenant via l'API">Vidéo</button>
+        <button class="tab" data-mode="link">Lien</button>
+      </div>
+      <div class="search-row">
+        <input type="text" id="search-input" placeholder="Ex. « dessin animé, un renard bleu, France 3, vers 1994 »" />
+        <button class="btn-amber" id="search-btn">Rechercher</button>
+      </div>
+      <div class="hint-row">
+        <span id="search-status">⏎ recherche instantanée</span>
+        <span style="margin-left:auto;color:var(--amber);" id="credits-label"></span>
+      </div>
+    </div>
+
+    <div id="search-results" style="display:none;max-width:640px;margin-top:14px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:4px;"></div>
+
+    <div style="max-width:640px;margin-top:14px;display:flex;justify-content:flex-end;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;">
+        <input type="text" placeholder="Code promo" style="background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:8px 12px;color:var(--cream);font-size:12.5px;font-family:var(--font-mono);width:130px;" />
+        <button class="btn-ghost" style="padding:8px 16px;font-size:12.5px;">Valider</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap-section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Résultat correspondant</h2>
+      <span class="count">1 série trouvée sur 3 pistes possibles</span>
+    </div>
+
+    <div class="fiche">
+      <div class="poster">
+        <span class="p-title">Les Mystères<br>de Vertigo</span>
+      </div>
+      <div class="fiche-body">
+        <h3>Les Mystères de Vertigo</h3>
+        <div class="meta-line">1987–1989 · FR3 · Animation · 26 épisodes prévus</div>
+
+        <div class="confirm-gallery">
+          <div class="confirm-label">C'EST BIEN ÇA ? — captures et affiches trouvées</div>
+          <div class="thumbs">
+            <img src="https://image.tmdb.org/t/p/w342/9dyEnMYEnfobcvhUvhIfEG9Y4Uo.jpg" alt="Capture 1" onerror="this.style.display='none'">
+            <img src="https://image.tmdb.org/t/p/w342/kqjL17yufvn9OVLyXYpvtyrFfak.jpg" alt="Capture 2" onerror="this.style.display='none'">
+            <img src="https://image.tmdb.org/t/p/w342/2CAL2433ZeIihfX1Hb2139CX0pW.jpg" alt="Capture 3" onerror="this.style.display='none'">
+            <img src="https://image.tmdb.org/t/p/w342/74xTEgt7R36Fpooo50r9T25onhq.jpg" alt="Capture 4" onerror="this.style.display='none'">
+          </div>
+        </div>
+
+        <p class="desc">Série jeunesse diffusée dans le cadre de « Les Visiteurs du Mercredi », centrée sur un groupe d'enfants explorant une maison qui change de pièces chaque nuit. Retirée des archives officielles après 1991 ; plusieurs bandes ont circulé en copie VHS amateur.</p>
+
+        <div class="status-summary">
+          <div class="item found"><span class="num">17</span>épisodes trouvés</div>
+          <div class="item missing"><span class="num">9</span>épisodes manquants</div>
+          <div class="item"><span class="num">3</span>sources vidéo liées</div>
+        </div>
+
+        <div class="ep-grid">
+          <div class="ep found"><span class="ep-code">S01E01</span><span class="ep-flag">OK</span><div class="ep-title">La Porte de Gauche</div></div>
+          <div class="ep found"><span class="ep-code">S01E02</span><span class="ep-flag">OK</span><div class="ep-title">Le Grenier Vide</div></div>
+          <div class="ep missing"><span class="ep-code">S01E03</span><span class="ep-flag">???</span><div class="ep-title">Titre inconnu</div><a href="#" class="ep-know-link">+ je sais où c'est</a></div>
+          <div class="ep found"><span class="ep-code">S01E04</span><span class="ep-flag">OK</span><div class="ep-title">Le Miroir Fêlé</div></div>
+          <div class="ep missing"><span class="ep-code">S01E05</span><span class="ep-flag">???</span><div class="ep-title">Titre inconnu</div><a href="#" class="ep-know-link">+ je sais où c'est</a></div>
+          <div class="ep found"><span class="ep-code">S01E06</span><span class="ep-flag">OK</span><div class="ep-title">La Cave aux Échos</div></div>
+          <div class="ep found"><span class="ep-code">S02E01</span><span class="ep-flag">OK</span><div class="ep-title">Retour d'Automne</div></div>
+          <div class="ep missing"><span class="ep-code">S02E02</span><span class="ep-flag">???</span><div class="ep-title">Titre inconnu</div><a href="#" class="ep-know-link">+ je sais où c'est</a></div>
+          <div class="ep found"><span class="ep-code">S02E03</span><span class="ep-flag">OK</span><div class="ep-title">L'Horloge Muette</div></div>
+          <div class="ep missing"><span class="ep-code">S02E04</span><span class="ep-flag">???</span><div class="ep-title">Titre inconnu</div><a href="#" class="ep-know-link">+ je sais où c'est</a></div>
+        </div>
+
+        <div class="watch-strip" style="border-top:none;padding-top:0;margin-top:22px;">
+          <div class="label" style="font-family:var(--font-mono);font-size:11.5px;">
+            <span style="color:var(--amber);">● 17 épisodes trouvés en source libre (archive.org, dépôts communautaires)</span><br>
+            <span style="color:var(--muted-2);">○ 3 épisodes disponibles uniquement en payant — aucune source gratuite identifiée</span>
+          </div>
+        </div>
+
+        <div class="watch-strip">
+          <div>
+            <div class="label">Épisodes introuvables gratuitement, disponibles légalement :</div>
+          </div>
+          <div class="platforms">
+            <a class="platform-btn primary" href="#">Amazon Prime Video <span class="price">8,99 €</span></a>
+            <a class="platform-btn" href="#">Netflix (abonnement) <span class="price">voir offre</span></a>
+            <a class="platform-btn" href="#">Coffret DVD (occasion) <span class="price">24,90 €</span></a>
+          </div>
+        </div>
+        <div class="disclosure">Lien affilié — NostalgieTV perçoit une commission sur les achats effectués via ces liens, sans surcoût pour toi. Les sources gratuites sont toujours proposées en priorité.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="non-trouve">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Aucune correspondance trouvée</h2>
+      <span class="count">requête : « clown bleu, pub Antenne 2, vers 1985 »</span>
+    </div>
+
+    <div class="fiche" style="grid-template-columns:1fr;text-align:left;">
+      <div>
+        <div class="meta-line">STATUT : NON RÉFÉRENCÉ</div>
+        <h3 style="margin-bottom:10px;">On n'a rien retrouvé qui corresponde.</h3>
+        <p class="desc">Ni dans les archives libres, ni chez nos partenaires payants. Si tu as un souvenir plus précis, une capture, un extrait, ou si tu sais où ça se trouve, tu peux ouvrir une fiche toi-même — la communauté complètera au fil du temps.</p>
+        <div class="review-form" style="max-width:520px;">
+          <input type="text" placeholder="Décris ce dont tu te souviens, ou colle un lien/une source…" />
+          <button class="btn-amber">Créer la piste</button>
+        </div>
+        <div class="disclosure">Les pistes ouvertes par la communauté sont visibles publiquement et peuvent être complétées par d'autres membres.</div>
+
+        <div style="margin-top:26px;padding-top:22px;border-top:1px dashed var(--line);">
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:4px;">Sois prévenu dès que quelqu'un la retrouve</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Pas besoin de compte — laisse ton numéro, on t'envoie un SMS le jour où ça bouge.</div>
+          <div class="review-form" style="max-width:420px;">
+            <input type="tel" placeholder="Ex. +226 XX XX XX XX" />
+            <button class="btn-amber">M'alerter</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="avis">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Avis de la communauté</h2>
+      <span class="count">48 commentaires</span>
+    </div>
+
+    <div class="review">
+      <div class="avatar">M</div>
+      <div>
+        <div class="review-head">
+          <span class="name">Marion D.</span>
+          <span class="stars">★★★★★</span>
+          <span class="date">il y a 3 jours</span>
+        </div>
+        <p>J'ai retrouvé l'épisode « Le Miroir Fêlé » que je cherchais depuis 15 ans grâce à une capture floue postée ici. Une source l'avait en VHS numérisée.</p>
+      </div>
+    </div>
+
+    <div class="review">
+      <div class="avatar">T</div>
+      <div>
+        <div class="review-head">
+          <span class="name">Thomas R.</span>
+          <span class="stars">★★★★☆</span>
+          <span class="date">il y a 1 semaine</span>
+        </div>
+        <p>Si quelqu'un a une copie de S02E02 même en mauvaise qualité, je peux la restaurer et la reposter avec les crédits d'archive.</p>
+      </div>
+    </div>
+
+    <div class="review-form">
+      <input type="text" placeholder="Ajouter un avis ou signaler une source retrouvée…" />
+      <button class="btn-amber">Publier</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" style="display:flex;justify-content:space-between;width:100%;flex-wrap:wrap;gap:12px;">
+    <span>NostalgieTV — un projet communautaire de préservation.</span>
+    <span>Certains liens sont des liens d'affiliation.</span>
+  </div>
+</footer>
+
+<script>
+  // À remplacer par l'URL réelle de l'API une fois déployée — cette maquette est
+  // un fichier statique, elle ne parle à aucun serveur tant que cette valeur pointe
+  // vers du vide. C'est la seule ligne à changer pour que le bandeau devienne réel.
+  const API_BASE_URL = "https://nostalgietv2.vercel.app";
+
+  // Annonces admin (texte libre) — indépendantes du bandeau code promo juste
+  // en dessous. "Fermer" ne fait disparaître que ce navigateur-là pour cette
+  // visite (pas de mémorisation entre visites, contrairement aux codes promo
+  // qui utilisent PromoCodeSeen pour ça).
+  fetch(`${API_BASE_URL}/site-announcements/active`)
+    .then((res) => res.json())
+    .then((announcements) => {
+      if (!Array.isArray(announcements) || announcements.length === 0) return;
+      const container = document.getElementById("site-announcements");
+      container.innerHTML = announcements
+        .map(
+          (a) => `
+          <div class="site-announcement" data-id="${a.id}">
+            <div class="wrap">
+              <span>📣 ${a.message}</span>
+              <button onclick="this.closest('.site-announcement').remove()">Fermer</button>
+            </div>
+          </div>`
+        )
+        .join("");
+    })
+    .catch(() => {
+      // silencieux — une annonce manquante ne doit jamais empêcher le reste du site de s'afficher
+    });
+
+  fetch(`${API_BASE_URL}/promo-codes/active`)
+    .then((res) => res.json())
+    .then((codes) => {
+      if (!Array.isArray(codes) || codes.length === 0) return;
+
+      // S'il y en a plusieurs actifs en même temps, on montre le plus généreux —
+      // cohérent avec l'idée "1 jour = 1 code" : en pratique il ne devrait y en
+      // avoir qu'un seul actif à la fois, mais le code ne l'impose pas techniquement.
+      const promo = codes.sort((a, b) => b.creditAmount - a.creditAmount)[0];
+
+      document.getElementById("promo-code-label").textContent = promo.code;
+      document.getElementById("promo-amount-label").textContent = promo.creditAmount;
+
+      let expiryText = "";
+      if (promo.expiresAt) {
+        const expiryDate = new Date(promo.expiresAt);
+        const today = new Date();
+        const isSameDay = expiryDate.toDateString() === today.toDateString();
+        expiryText = isSameDay
+          ? " — expire aujourd'hui"
+          : ` — expire le ${expiryDate.toLocaleDateString("fr-FR")}`;
+      }
+      document.getElementById("promo-expiry-label").textContent = expiryText;
+      document.getElementById("promo-banner").style.display = "block";
+    })
+    .catch(() => {
+      // Pas de backend déployé derrière API_BASE_URL pour l'instant : on échoue
+      // silencieusement plutôt que d'afficher une erreur dans une simple maquette.
+    });
+
+  // ============================================================
+  // Authentification (connexion / inscription) — stocke le token JWT en
+  // localStorage, propre à ce navigateur, jamais envoyé à un autre visiteur.
+  // ============================================================
+  const authBtn = document.getElementById("auth-btn");
+
+  function getToken() { return localStorage.getItem("nostalgietv_token"); }
+  function getEmail() { return localStorage.getItem("nostalgietv_email"); }
+  function setSession(token, email) {
+    localStorage.setItem("nostalgietv_token", token);
+    localStorage.setItem("nostalgietv_email", email);
+  }
+  function clearSession() {
+    localStorage.removeItem("nostalgietv_token");
+    localStorage.removeItem("nostalgietv_email");
+  }
+
+  const changePasswordBtn = document.getElementById("change-password-btn");
+
+  function updateAuthUI() {
+    const token = getToken();
+    if (token) {
+      authBtn.textContent = `${getEmail()} · Déconnexion`;
+      changePasswordBtn.style.display = "inline-block";
+      refreshCreditsLabel();
+    } else {
+      authBtn.textContent = "Se connecter";
+      changePasswordBtn.style.display = "none";
+      document.getElementById("credits-label").textContent = "";
+    }
+  }
+
+  changePasswordBtn.addEventListener("click", openChangePasswordModal);
+
+  function openChangePasswordModal() {
+    const overlay = document.createElement("div");
+    overlay.style.cssText =
+      "position:fixed;inset:0;background:rgba(14,28,24,0.85);display:flex;align-items:center;justify-content:center;z-index:100;";
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:24px;width:320px;font-family:var(--font-body);color:var(--cream);">
+        <div style="font-weight:600;margin-bottom:14px;">Changer le mot de passe</div>
+        <form id="cp-form" autocomplete="on">
+          <input type="email" name="email" value="${getEmail() ?? ""}" autocomplete="username" style="display:none;" />
+          <input id="cp-current" name="current-password" type="password" autocomplete="current-password" placeholder="Mot de passe actuel" style="width:100%;padding:8px;margin-bottom:8px;background:var(--bg-deep);border:1px solid var(--line);border-radius:4px;color:var(--cream);box-sizing:border-box;" />
+          <input id="cp-new" name="new-password" type="password" autocomplete="new-password" placeholder="Nouveau mot de passe (8 caractères min.)" style="width:100%;padding:8px;margin-bottom:8px;background:var(--bg-deep);border:1px solid var(--line);border-radius:4px;color:var(--cream);box-sizing:border-box;" />
+          <div id="cp-message" style="font-size:12.5px;color:var(--rust);min-height:18px;margin-bottom:8px;"></div>
+          <button type="submit" style="width:100%;padding:10px;background:var(--amber);color:var(--bg-deep);border:none;border-radius:4px;font-weight:600;cursor:pointer;margin-bottom:8px;">Valider</button>
+        </form>
+        <button type="button" id="cp-cancel" style="width:100%;padding:8px;background:transparent;color:var(--muted);border:none;cursor:pointer;">Annuler</button>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const form = overlay.querySelector("#cp-form");
+    const message = overlay.querySelector("#cp-message");
+    overlay.querySelector("#cp-cancel").addEventListener("click", () => overlay.remove());
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const currentPassword = overlay.querySelector("#cp-current").value;
+      const newPassword = overlay.querySelector("#cp-new").value;
+      if (!currentPassword || !newPassword) {
+        message.textContent = "Les deux champs sont requis.";
+        return;
+      }
+      const submitBtn = form.querySelector("button[type=submit]");
+      submitBtn.disabled = true;
+      message.style.color = "var(--muted)";
+      message.textContent = "Un instant…";
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/change-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Échec du changement de mot de passe.");
+        message.style.color = "var(--amber)";
+        message.textContent = "Mot de passe changé.";
+        setTimeout(() => overlay.remove(), 1200);
+      } catch (err) {
+        message.style.color = "var(--rust)";
+        message.textContent = err.message || "Erreur de connexion au serveur.";
+        submitBtn.disabled = false;
+      }
+    });
+  }
+
+  async function refreshCreditsLabel() {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/credits/balance`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return; // token expiré/invalide : on laisse tranquillement vide
+      const data = await res.json();
+      document.getElementById("credits-label").textContent = `◆ ${data.balance} crédits IA`;
+    } catch {
+      // silencieux — l'affichage des crédits n'est qu'indicatif
+    }
+  }
+
+  authBtn.addEventListener("click", () => {
+    if (getToken()) {
+      clearSession();
+      updateAuthUI();
+    } else {
+      openAuthModal();
+    }
+  });
+
+  function openAuthModal() {
+    const overlay = document.createElement("div");
+    overlay.style.cssText =
+      "position:fixed;inset:0;background:rgba(14,28,24,0.85);display:flex;align-items:center;justify-content:center;z-index:100;";
+    // Une vraie balise <form>, avec les bons attributs autocomplete/name, est ce
+    // qui permet à Chrome (et aux autres navigateurs) de proposer d'enregistrer
+    // le mot de passe. Un simple <input> isolé, ou un <button> non "submit",
+    // ne déclenche jamais cette proposition — c'était le cas avant ce correctif.
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:24px;width:320px;font-family:var(--font-body);color:var(--cream);">
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button type="button" id="am-tab-login" style="flex:1;padding:8px;background:var(--amber);color:var(--bg-deep);border:none;border-radius:4px;font-weight:600;cursor:pointer;">Connexion</button>
+          <button type="button" id="am-tab-signup" style="flex:1;padding:8px;background:transparent;color:var(--cream);border:1px solid var(--line);border-radius:4px;cursor:pointer;">Inscription</button>
+        </div>
+        <form id="am-form" autocomplete="on">
+          <input id="am-email" name="phone" type="text" autocomplete="username" placeholder="Numéro de téléphone (ex. 75 31 83 51)" style="width:100%;padding:8px;margin-bottom:8px;background:var(--bg-deep);border:1px solid var(--line);border-radius:4px;color:var(--cream);box-sizing:border-box;" />
+          <input id="am-password" name="password" type="password" autocomplete="current-password" placeholder="Mot de passe" style="width:100%;padding:8px;margin-bottom:8px;background:var(--bg-deep);border:1px solid var(--line);border-radius:4px;color:var(--cream);box-sizing:border-box;" />
+          <div id="am-message" style="font-size:12.5px;color:var(--rust);min-height:18px;margin-bottom:8px;"></div>
+          <button type="submit" id="am-submit" style="width:100%;padding:10px;background:var(--amber);color:var(--bg-deep);border:none;border-radius:4px;font-weight:600;cursor:pointer;margin-bottom:8px;">Se connecter</button>
+        </form>
+        <button type="button" id="am-cancel" style="width:100%;padding:8px;background:transparent;color:var(--muted);border:none;cursor:pointer;">Annuler</button>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    let mode = "login";
+    const tabLogin = overlay.querySelector("#am-tab-login");
+    const tabSignup = overlay.querySelector("#am-tab-signup");
+    const form = overlay.querySelector("#am-form");
+    const passwordInput = overlay.querySelector("#am-password");
+    const submitBtn = overlay.querySelector("#am-submit");
+    const message = overlay.querySelector("#am-message");
+
+    function setMode(next) {
+      mode = next;
+      const isLogin = mode === "login";
+      tabLogin.style.background = isLogin ? "var(--amber)" : "transparent";
+      tabLogin.style.color = isLogin ? "var(--bg-deep)" : "var(--cream)";
+      tabSignup.style.background = isLogin ? "transparent" : "var(--amber)";
+      tabSignup.style.color = isLogin ? "var(--cream)" : "var(--bg-deep)";
+      submitBtn.textContent = isLogin ? "Se connecter" : "Créer le compte";
+      // "new-password" (plutôt que "current-password") est ce qui pousse Chrome à
+      // proposer un mot de passe généré et à l'enregistrer comme nouveau, pas à
+      // en suggérer un déjà connu — plus logique pour une inscription.
+      passwordInput.autocomplete = isLogin ? "current-password" : "new-password";
+      message.textContent = "";
+    }
+    tabLogin.addEventListener("click", () => setMode("login"));
+    tabSignup.addEventListener("click", () => setMode("signup"));
+
+    overlay.querySelector("#am-cancel").addEventListener("click", () => overlay.remove());
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = overlay.querySelector("#am-email").value.trim();
+      const password = passwordInput.value;
+      if (!email || !password) {
+        message.textContent = "Numéro de téléphone et mot de passe requis.";
+        return;
+      }
+      submitBtn.disabled = true;
+      message.style.color = "var(--muted)";
+      message.textContent = "Un instant…";
+      try {
+        if (mode === "login") {
+          const res = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identifier: email, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Connexion refusée.");
+          setSession(data.token, email);
+          updateAuthUI();
+          overlay.remove();
+        } else {
+          const res = await fetch(`${API_BASE_URL}/auth/signup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone: email, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Inscription refusée.");
+          // Compte par numéro : utilisable tout de suite, le serveur renvoie directement un token.
+          if (!data.token) throw new Error("Compte créé, mais la connexion automatique a échoué. Connecte-toi.");
+          setSession(data.token, email);
+          updateAuthUI();
+          overlay.remove();
+        }
+      } catch (err) {
+        message.style.color = "var(--rust)";
+        message.textContent = err.message || "Erreur de connexion au serveur.";
+        submitBtn.disabled = false;
+      }
+    });
+  }
+
+  updateAuthUI();
+
+  // ============================================================
+  // Recherche — branchée sur POST /search pour les modes texte (titre,
+  // description, lien). Image/Vidéo restent désactivés depuis le site : ils
+  // exigent d'abord un upload vers Vercel Blob (voir /uploads/handshake),
+  // pas encore câblé ici pour rester sur un premier lot propre et testable.
+  // ============================================================
+  let searchMode = "title";
+  document.querySelectorAll("#search-tabs .tab").forEach((tabEl) => {
+    tabEl.addEventListener("click", () => {
+      if (tabEl.disabled) return;
+      document.querySelectorAll("#search-tabs .tab").forEach((t) => t.classList.remove("active"));
+      tabEl.classList.add("active");
+      searchMode = tabEl.dataset.mode;
+    });
+  });
+
+  const searchInput = document.getElementById("search-input");
+  const searchBtn = document.getElementById("search-btn");
+  const searchStatus = document.getElementById("search-status");
+  const resultsBox = document.getElementById("search-results");
+
+  async function runSearch() {
+    const value = searchInput.value.trim();
+    if (!value) return;
+
+    // Pas de blocage ici avant d'envoyer : la recherche par titre est gratuite,
+    // donc valable sans compte. On envoie le token SI il existe (utile pour les
+    // autres modes), mais on n'exige jamais une connexion par avance — seul le
+    // serveur sait vraiment si cette recherche précise va coûter des crédits.
+    const token = getToken();
+
+    searchBtn.disabled = true;
+    searchStatus.textContent = "Recherche en cours…";
+    resultsBox.style.display = "none";
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/search`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ mode: searchMode, value }),
+      });
+      const data = await res.json();
+      if (res.status === 401) {
+        // Uniquement ici (description/image/vidéo/lien) que la connexion est
+        // vraiment requise — jamais avant d'avoir essayé.
+        searchStatus.textContent = "⏎ recherche instantanée";
+        searchBtn.disabled = false;
+        openAuthModal();
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || "La recherche a échoué.");
+
+      resultsBox.style.display = "block";
+      if (data.preview) {
+        resultsBox.innerHTML = `
+          <div style="display:flex;gap:16px;">
+            ${data.preview.posterUrl ? `<img src="${data.preview.posterUrl}" style="width:80px;border-radius:4px;" />` : ""}
+            <div>
+              <div style="font-family:var(--font-display);font-size:18px;color:var(--amber);">${data.preview.title}${data.preview.originalYear ? ` (${data.preview.originalYear})` : ""}</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:6px;">${data.preview.synopsis ?? ""}</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--muted-2);">${data.message} — source : ${data.providerUsed}${data.creditsSpent ? ` · ${data.creditsSpent} crédit(s) dépensé(s)` : ""}</div>
+          <div id="availability-box" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line);">Recherche des liens…</div>`;
+        loadAvailability(data.preview.showId);
+      } else {
+        resultsBox.innerHTML = `<div style="color:var(--muted);">${data.message}</div>`;
+      }
+      refreshCreditsLabel();
+      searchStatus.textContent = "⏎ recherche instantanée";
+    } catch (err) {
+      resultsBox.style.display = "block";
+      resultsBox.innerHTML = `<div style="color:var(--rust);">${err.message}</div>`;
+      searchStatus.textContent = "⏎ recherche instantanée";
+    } finally {
+      searchBtn.disabled = false;
+    }
+  }
+
+  searchBtn.addEventListener("click", runSearch);
+  searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") runSearch(); });
+
+  // ============================================================
+  // Disponibilité — une fois la série identifiée par /search, on va chercher
+  // séparément où la regarder. Deux appels : les liens valables pour toute
+  // la série (ex. abonnement, coffret Amazon), et le détail épisode par
+  // épisode (gratuit trouvé / payant seulement / manquant sans rien).
+  //
+  // IMPORTANT — honnêteté sur ce que fait réellement le site : il n'y a AUCUNE
+  // recherche Amazon en direct au moment où tu cherches une série. Un lien
+  // Amazon (ou toute autre plateforme) n'apparaît ici que si quelqu'un l'a
+  // déjà ajouté via le panneau admin (POST /admin/shows/:id/affiliate-links).
+  // S'il n'y en a pas, ce n'est pas que le site n'a pas cherché : c'est que
+  // personne n'en a encore renseigné pour cette série.
+  // ============================================================
+  // ============================================================
+  // Contribuer (dons) — liste les numéros Orange Money / Wave / Moov Money
+  // renvoyés par GET /support/donation-channels. Un don ne donne aucun crédit.
+  // ============================================================
+  const DONATION_LABELS = { orange_money: "Orange Money", wave: "Wave", moov_money: "Moov Money" };
+
+  async function openDonateModal() {
+    const overlay = document.createElement("div");
+    overlay.style.cssText =
+      "position:fixed;inset:0;background:rgba(14,28,24,0.85);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;overflow-y:auto;";
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:24px;width:100%;max-width:340px;font-family:var(--font-body);color:var(--cream);">
+        <div style="font-weight:600;font-size:17px;margin-bottom:6px;">Soutenir NostalgieTV</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;">Un don est libre et ne donne ni crédit ni avantage. Merci !</div>
+        <div id="donate-list" style="color:var(--muted);">Chargement…</div>
+        <button type="button" id="donate-close" style="width:100%;margin-top:14px;padding:8px;background:transparent;color:var(--muted);border:none;cursor:pointer;">Fermer</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector("#donate-close").addEventListener("click", () => overlay.remove());
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+
+    const list = overlay.querySelector("#donate-list");
+    try {
+      const res = await fetch(`${API_BASE_URL}/support/donation-channels`);
+      if (!res.ok) throw new Error();
+      const channels = await res.json();
+      if (!Array.isArray(channels) || channels.length === 0) {
+        list.textContent = "Aucun moyen de don disponible pour le moment.";
+        return;
+      }
+      list.innerHTML = channels.map((c) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);">
+          <img src="${escapeHtml(c.qrCodeUrl)}" alt="QR ${escapeHtml(DONATION_LABELS[c.provider] ?? c.provider)}" width="72" height="72" style="border-radius:4px;background:#fff;" />
+          <div>
+            <div style="font-weight:600;color:var(--amber);">${escapeHtml(DONATION_LABELS[c.provider] ?? c.provider)}</div>
+            <div style="font-family:var(--font-mono);font-size:14px;color:var(--cream);">${escapeHtml(c.display)}</div>
+          </div>
+        </div>`).join("");
+    } catch {
+      list.textContent = "Impossible de charger les moyens de don pour le moment.";
+    }
+  }
+
+  document.getElementById("donate-link")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    openDonateModal();
+  });
+
+  const PLATFORM_LABELS = { youtube: "YouTube", amazon: "Amazon Prime Video", netflix: "Netflix" };
+
+  function escapeHtml(str) {
+    return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  async function loadAvailability(showId) {
+    const box = document.getElementById("availability-box");
+    const token = getToken();
+    try {
+      const [linksRes, episodesRes, providersRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/shows/${showId}/where-to-watch`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }),
+        fetch(`${API_BASE_URL}/shows/${showId}/episodes`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }),
+        // Plateformes officielles : ne doit jamais casser l'affichage si ça échoue.
+        fetch(`${API_BASE_URL}/shows/${showId}/watch-providers`).catch(() => null),
+      ]);
+      const links = linksRes.ok ? await linksRes.json() : [];
+      let providers = null;
+      try { providers = providersRes && providersRes.ok ? await providersRes.json() : null; } catch { providers = null; }
+      const details = episodesRes.ok ? await episodesRes.json() : null;
+      const rawTitle = details?.title ?? "";
+      const title = escapeHtml(rawTitle || "Cette série");
+
+      // Liens de recherche générés automatiquement pour TOUTE série : aucun travail
+      // manuel, aucune API (simples liens). Ils mènent aux résultats de recherche de
+      // chaque plateforme, pas à une vidéo précise — le site ne garantit pas ce qu'on y
+      // trouve ni sa légalité. Pour ajouter un moteur : une ligne dans SEARCH_ENGINES.
+      const SEARCH_ENGINES = [
+        { label: "YouTube", url: (q) => `https://www.youtube.com/results?search_query=${q}` },
+        { label: "Dailymotion", url: (q) => `https://www.dailymotion.com/search/${q}` },
+        { label: "Google Vidéos", url: (q) => `https://www.google.com/search?tbm=vid&q=${q}` },
+        { label: "Internet Archive", url: (q) => `https://archive.org/search?query=${q}` },
+      ];
+      const ytButton = rawTitle
+        ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;">${SEARCH_ENGINES.map((e, i) => {
+            const q = encodeURIComponent(i === 0 || i === 1 ? rawTitle + " épisodes" : rawTitle);
+            const primary = i === 0;
+            const style = primary
+              ? "background:var(--amber);color:#1a1a1a;border:1px solid var(--amber);"
+              : "background:transparent;color:var(--cream);border:1px solid var(--line);";
+            return `<a href="${e.url(q)}" target="_blank" rel="noopener" style="display:inline-block;padding:8px 12px;border-radius:4px;font-weight:600;font-size:13px;text-decoration:none;${style}">🔎 ${e.label}</a>`;
+          }).join("")}</div>`
+        : "";
+
+      // --- Plateformes officielles (données JustWatch via TMDB). L'attribution
+      // "JustWatch" est OBLIGATOIRE dès qu'on affiche ces données. ---
+      const PROVIDER_CATEGORIES = [
+        ["flatrate", "Abonnement"], ["free", "Gratuit"], ["ads", "Gratuit avec pub"],
+        ["rent", "Location"], ["buy", "Achat"],
+      ];
+      let providersHtml = "";
+      if (providers && providers.categories) {
+        let regionName = providers.country;
+        try { regionName = new Intl.DisplayNames(["fr"], { type: "region" }).of(providers.country) ?? providers.country; } catch {}
+        const rows = PROVIDER_CATEGORIES
+          .filter(([key]) => (providers.categories[key] ?? []).length > 0)
+          .map(([key, label]) => `
+            <div style="margin-top:8px;font-size:12.5px;color:var(--muted-2);">${label}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+              ${providers.categories[key].map((p) => `<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;background:var(--surface-2);border:1px solid var(--line);border-radius:3px;font-size:12.5px;color:var(--cream);">${p.logoUrl ? `<img src="${escapeHtml(p.logoUrl)}" alt="" width="18" height="18" style="border-radius:3px;" />` : ""}${escapeHtml(p.name)}</span>`).join("")}
+            </div>`);
+        if (rows.length > 0) {
+          providersHtml = `
+            <div style="margin-top:16px;font-weight:600;color:var(--amber);font-size:13px;">Plateformes officielles — ${escapeHtml(regionName)}</div>
+            ${providers.isFallback ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">Pas d'information pour ton pays : voici la disponibilité en ${escapeHtml(regionName)}.</div>` : ""}
+            ${rows.join("")}
+            <div style="margin-top:8px;font-size:11.5px;color:var(--muted-2);">Données fournies par <a href="https://www.justwatch.com" target="_blank" rel="noopener" style="color:var(--muted);">JustWatch</a>${providers.link ? ` · <a href="${escapeHtml(providers.link)}" target="_blank" rel="noopener" style="color:var(--muted);">voir les détails</a>` : ""}</div>`;
+        }
+      }
+
+      let html = "";
+
+      if (links.length > 0) {
+        // --- Un lien pour toute la série (ex. YouTube) : c'est tout ce qu'il faut afficher ---
+        html += `<div style="font-weight:600;color:var(--amber);margin-bottom:8px;">Où regarder ${title}</div>`;
+        html += links
+          .map((l) => {
+            const label = escapeHtml(PLATFORM_LABELS[l.platform] ?? l.platform);
+            const price = l.priceLabel ? ` — ${escapeHtml(l.priceLabel)}` : "";
+            return `<div style="margin-bottom:6px;"><a href="${escapeHtml(l.url)}" target="_blank" rel="noopener" style="display:inline-block;padding:8px 14px;background:var(--amber);color:#1a1a1a;border-radius:4px;font-weight:600;text-decoration:none;">▶ Voir sur ${label}</a>${price}</div>`;
+          })
+          .join("");
+        html += ytButton;
+        html += providersHtml;
+      } else {
+        // --- Aucun lien enregistré : recherche YouTube automatique + possibilité d'être prévenu ---
+        html += `<div style="font-weight:600;color:var(--amber);margin-bottom:8px;">Où regarder ${title}</div>`;
+        html += ytButton;
+        html += providersHtml;
+        if (!providersHtml) {
+          html += `<div style="color:var(--muted);margin:10px 0;font-size:13px;">Aucune plateforme officielle connue pour l'instant.</div>`;
+        }
+        html += `<div style="height:8px;"></div><button id="alert-btn" style="padding:8px 14px;background:transparent;border:1px solid var(--amber);color:var(--amber);border-radius:4px;cursor:pointer;">🔔 Me prévenir quand il y en a un</button>`;
+        html += `<div id="alert-status" style="margin-top:6px;font-size:12.5px;color:var(--muted-2);"></div>`;
+      }
+
+      // --- Épisodes avec un lien gratuit vérifié (seulement s'il y en a) ---
+      if (details && details.episodes) {
+        const found = details.episodes.filter((e) => e.status === "found" && e.freeSources.length > 0);
+        if (found.length > 0) {
+          const bySeason = {};
+          found.forEach((e) => { (bySeason[e.season] ??= []).push(e); });
+          html += `<div style="margin-top:14px;font-weight:600;color:var(--amber);font-size:13px;">Épisodes disponibles gratuitement</div>`;
+          Object.keys(bySeason).sort((a, b) => Number(a) - Number(b)).forEach((season) => {
+            html += `<div style="margin-top:6px;font-size:12.5px;color:var(--muted-2);">Saison ${season}</div>`;
+            html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">`;
+            html += bySeason[season]
+              .map((e) => `<a href="${escapeHtml(e.freeSources[0].url)}" target="_blank" rel="noopener" style="padding:4px 8px;background:var(--surface-2);border:1px solid var(--line);border-radius:3px;color:var(--cream);font-size:12px;">E${String(e.episode).padStart(2, "0")}</a>`)
+              .join("");
+            html += `</div>`;
+          });
+        }
+      }
+
+      box.innerHTML = html;
+
+      const alertBtn = document.getElementById("alert-btn");
+      if (alertBtn) {
+        alertBtn.addEventListener("click", async () => {
+          const statusEl = document.getElementById("alert-status");
+          const phone = prompt("Ton numéro de téléphone pour être prévenu :");
+          if (!phone || !phone.trim()) return;
+          try {
+            const res = await fetch(`${API_BASE_URL}/shows/${showId}/alerts`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+              body: JSON.stringify({ phoneNumber: phone.trim() }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || "Échec de l'inscription");
+            statusEl.textContent = "C'est noté : tu seras prévenu.";
+            alertBtn.disabled = true;
+          } catch (err) {
+            statusEl.textContent = err.message;
+          }
+        });
+      }
+    } catch {
+      box.innerHTML = `<div style="color:var(--rust);">Impossible de récupérer les liens pour le moment.</div>`;
+    }
+  }
+</script>
+
+</body>
+</html>
